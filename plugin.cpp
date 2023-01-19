@@ -1,12 +1,17 @@
 #include <SkyrimScripting/Plugin.h>
 
-OnInit { logger::info("Hello log from SKSE Starter Kit!"); }
-OnDataLoaded { ConsoleLog("Hello console from SKSE Starter Kit!"); }
+class ModEventEventSink : public RE::BSTEventSink<SKSE::CrosshairRefEvent> {
+public:
+    RE::BSEventNotifyControl ProcessEvent(const SKSE::CrosshairRefEvent* event,
+                                          RE::BSTEventSource<SKSE::CrosshairRefEvent>*) override {
+        auto* ref = event->crosshairRef.get();
+        if (ref) {
+            auto* base = ref->GetBaseObject();
+            logger::info("REF:{:x} [{}] '{}' | BASE:{:x} [{}] '{}'", ref->GetFormID(), ref->GetFormEditorID(),
+                         ref->GetDisplayFullName(), base->GetFormID(), base->GetFormEditorID(), base->GetName());
+        }
+        return RE::BSEventNotifyControl::kContinue;
+    }
+};
 
-EventHandlers {
-    On<RE::TESActivateEvent>([](const RE::TESActivateEvent* event) {
-        auto activated = event->objectActivated->GetBaseObject()->GetName();
-        auto activator = event->actionRef->GetBaseObject()->GetName();
-        ConsoleLog("{} activated {}", activator, activated);
-    });
-}
+OnInit { SKSE::GetCrosshairRefEventSource()->AddEventSink(new ModEventEventSink()); }
